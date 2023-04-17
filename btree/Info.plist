@@ -126,9 +126,11 @@
 	<true/>
 	<key>WKAppBoundDomains</key>
 	<array>
+		<string>accounts.google.com</string>
 		<string>checkout.stripe.com</string>
 		<string>dropbox.com</string>
 		<string>app.btree.at</string>
+		<string>api.btree.at</string>
 	</array>
 </dict>
 </plist>
