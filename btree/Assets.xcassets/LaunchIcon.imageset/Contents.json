@@ -19,42 +19,14 @@
       "scale" : "3x"
     },
     {
-      "compression-type" : "automatic",
-      "filename" : "launch-64 1.png",
-      "idiom" : "iphone",
-      "scale" : "1x"
+      "filename" : "launch-256.png",
+      "idiom" : "universal",
+      "scale" : "4x"
     },
     {
-      "compression-type" : "automatic",
-      "filename" : "launch-128 1.png",
-      "idiom" : "iphone",
-      "scale" : "2x"
-    },
-    {
-      "compression-type" : "automatic",
-      "filename" : "launch-192 1.png",
-      "idiom" : "iphone",
-      "scale" : "3x"
-    },
-    {
-      "filename" : "launch-256 2.png",
-      "idiom" : "ipad",
-      "scale" : "1x"
-    },
-    {
-      "filename" : "launch-512 2.png",
-      "idiom" : "ipad",
-      "scale" : "2x"
-    },
-    {
-      "filename" : "launch-256 1.png",
-      "idiom" : "mac",
-      "scale" : "1x"
-    },
-    {
-      "filename" : "launch-512 1.png",
-      "idiom" : "mac",
-      "scale" : "2x"
+      "filename" : "launch-512.png",
+      "idiom" : "universal",
+      "scale" : "8x"
     }
   ],
   "info" : {
