@@ -1,5 +1,10 @@
+/*
+// PUSH NOTIFICATIONS DISABLED
+// All push notification functionality has been commented out
+// Uncomment this entire block to re-enable push notifications
+
 import WebKit
-//import FirebaseMessaging
+import FirebaseMessaging
 
 class SubscribeMessage {
     var topic  = ""
@@ -133,6 +138,33 @@ func handlePushState() {
     }
 }
 
+func checkViewAndEvaluate(event: String, detail: String) {
+    if (!btree.webView.isHidden && !btree.webView.isLoading ) {
+        DispatchQueue.main.async(execute: {
+            btree.webView.evaluateJavaScript("this.dispatchEvent(new CustomEvent('\(event)', { detail: \(detail) }))")
+        })
+    }
+    else {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            checkViewAndEvaluate(event: event, detail: detail)
+        }
+    }
+}
+
+func handleFCMToken(){
+    DispatchQueue.main.async(execute: {
+        Messaging.messaging().token { token, error in
+            if let error = error {
+                print("Error fetching FCM registration token: \(error)")
+                checkViewAndEvaluate(event: "push-token", detail: "ERROR GET TOKEN")
+            } else if let token = token {
+                print("FCM registration token: \(token)")
+                checkViewAndEvaluate(event: "push-token", detail: "'\(token)'")
+            }
+        }   
+    })
+}
+
 func sendPushToWebView(userInfo: [AnyHashable: Any]){
     var json = "";
     do {
@@ -142,17 +174,20 @@ func sendPushToWebView(userInfo: [AnyHashable: Any]){
         print("ERROR: userInfo parsing problem")
         return
     }
-    func checkViewAndEvaluate() {
-        if (!btree.webView.isHidden && !btree.webView.isLoading ) {
-            DispatchQueue.main.async(execute: {
-                btree.webView.evaluateJavaScript("this.dispatchEvent(new CustomEvent('push-notification', { detail: \(json) }))")
-            })
-        }
-        else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                checkViewAndEvaluate()
-            }
-        }
-    }
-    checkViewAndEvaluate()
+    checkViewAndEvaluate(event: "push-notification", detail: json)
 }
+
+func sendPushClickToWebView(userInfo: [AnyHashable: Any]){
+    var json = "";
+    do {
+        let jsonData = try JSONSerialization.data(withJSONObject: userInfo)
+        json = String(data: jsonData, encoding: .utf8)!
+    } catch {
+        print("ERROR: userInfo parsing problem")
+        return
+    }
+    checkViewAndEvaluate(event: "push-notification-click", detail: json)
+}
+
+// END OF COMMENTED PUSH NOTIFICATION CODE
+*/
