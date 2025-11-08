@@ -126,11 +126,26 @@
 	<true/>
 	<key>WKAppBoundDomains</key>
 	<array>
-		<string>accounts.google.com</string>
-		<string>checkout.stripe.com</string>
+		<string>btree.at</string>
+    	<string>app.btree.at</string>
+    	<string>api.btree.at</string>
+
+    	<string>accounts.google.com</string>
+    	<string>appleid.apple.com</string>
+
+    	<string>mollie.com</string>
+    	<string>www.mollie.com</string>
+    	<string>checkout.mollie.com</string>
+
+    	<string>connect.stripe.com</string>
+    	<string>checkout.stripe.com</string>
+
+    	<string>paypal.com</string>
+    	<string>www.paypal.com</string>
+    	<string>www.sandbox.paypal.com</string>
+		
 		<string>dropbox.com</string>
-		<string>app.btree.at</string>
-		<string>api.btree.at</string>
+    	<string>www.dropbox.com</string>
 	</array>
 </dict>
 </plist>
