@@ -3,6 +3,10 @@ import WebKit
 import AuthenticationServices
 import SafariServices
 
+#if targetEnvironment(simulator)
+import Foundation
+#endif
+
 
 func createWebView(container: UIView, WKSMH: WKScriptMessageHandler, WKND: WKNavigationDelegate, NSO: NSObject, VC: ViewController) -> WKWebView{
 
@@ -21,6 +25,11 @@ func createWebView(container: UIView, WKSMH: WKScriptMessageHandler, WKND: WKNav
     config.allowsInlineMediaPlayback = true
     config.preferences.javaScriptCanOpenWindowsAutomatically = true
     config.preferences.setValue(true, forKey: "standalone")
+    
+    // Reduce simulator keyboard-related warnings
+    #if targetEnvironment(simulator)
+    config.suppressesIncrementalRendering = true
+    #endif
     
     let webView = WKWebView(frame: calcWebviewFrame(webviewView: container, toolbarView: nil), configuration: config)
     setCustomCookie(webView: webView)
@@ -105,18 +114,28 @@ func calcWebviewFrame(webviewView: UIView, toolbarView: UIToolbar?) -> CGRect{
 extension ViewController: WKUIDelegate, WKDownloadDelegate {
     // redirect new tabs to main webview
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        if (navigationAction.targetFrame == nil) {
+        if navigationAction.targetFrame == nil {
             webView.load(navigationAction.request)
         }
         return nil
     }
     // restrict navigation to target host, open external links in 3rd party apps
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        
+        // Safety check to ensure decision handler is called exactly once
+        var hasCalledDecisionHandler = false
+        
+        func safeDecisionHandler(_ policy: WKNavigationActionPolicy) {
+            guard !hasCalledDecisionHandler else { return }
+            hasCalledDecisionHandler = true
+            decisionHandler(policy)
+        }
+        
         if (navigationAction.request.url?.scheme == "about") {
-            return decisionHandler(.allow)
+            return safeDecisionHandler(.allow)
         }
         if (navigationAction.shouldPerformDownload || navigationAction.request.url?.scheme == "blob") {
-            return decisionHandler(.download)
+            return safeDecisionHandler(.download)
         }
 
         if let requestUrl = navigationAction.request.url{
@@ -124,7 +143,7 @@ extension ViewController: WKUIDelegate, WKDownloadDelegate {
                 // NOTE: Match auth origin first, because host origin may be a subset of auth origin and may therefore always match
                 let matchingAuthOrigin = authOrigins.first(where: { requestHost.range(of: $0) != nil })
                 if (matchingAuthOrigin != nil) {
-                    decisionHandler(.allow)
+                    safeDecisionHandler(.allow)
                     if (toolbarView.isHidden) {
                         toolbarView.isHidden = false
                         webView.frame = calcWebviewFrame(webviewView: webviewView, toolbarView: toolbarView)
@@ -135,7 +154,7 @@ extension ViewController: WKUIDelegate, WKDownloadDelegate {
                 let matchingHostOrigin = allowedOrigins.first(where: { requestHost.range(of: $0) != nil })
                 if (matchingHostOrigin != nil) {
                     // Open in main webview
-                    decisionHandler(.allow)
+                    safeDecisionHandler(.allow)
                     if (!toolbarView.isHidden) {
                         toolbarView.isHidden = true
                         webView.frame = calcWebviewFrame(webviewView: webviewView, toolbarView: nil)
@@ -143,31 +162,28 @@ extension ViewController: WKUIDelegate, WKDownloadDelegate {
                     return
                 }
                 if (navigationAction.navigationType == .other &&
-                    navigationAction.value(forKey: "syntheticClickType") as! Int == 0 &&
-                    (navigationAction.targetFrame != nil) &&
-                    // no error here, fake warning
-                    (navigationAction.sourceFrame != nil)
+                    (navigationAction.value(forKey: "syntheticClickType") as? Int ?? -1) == 0
                 ) {
-                    decisionHandler(.allow)
+                    safeDecisionHandler(.allow)
                     return
                 }
                 else {
-                    decisionHandler(.cancel)
-                }
-
-
-                if ["http", "https"].contains(requestUrl.scheme?.lowercased() ?? "") {
-                    // Can open with SFSafariViewController
-                    let safariViewController = SFSafariViewController(url: requestUrl)
-                    self.present(safariViewController, animated: true, completion: nil)
-                } else {
-                    // Scheme is not supported or no scheme is given, use openURL
-                    if (UIApplication.shared.canOpenURL(requestUrl)) {
-                        UIApplication.shared.open(requestUrl)
+                    safeDecisionHandler(.cancel)
+                    
+                    if ["http", "https"].contains(requestUrl.scheme?.lowercased() ?? "") {
+                        // Can open with SFSafariViewController
+                        let safariViewController = SFSafariViewController(url: requestUrl)
+                        self.present(safariViewController, animated: true, completion: nil)
+                    } else {
+                        // Scheme is not supported or no scheme is given, use openURL
+                        if (UIApplication.shared.canOpenURL(requestUrl)) {
+                            UIApplication.shared.open(requestUrl)
+                        }
                     }
+                    return
                 }
             } else {
-                decisionHandler(.cancel)
+                safeDecisionHandler(.cancel)
                 if (navigationAction.request.url?.scheme == "tel" || navigationAction.request.url?.scheme == "mailto" ){
                     if (UIApplication.shared.canOpenURL(requestUrl)) {
                         UIApplication.shared.open(requestUrl)
@@ -182,10 +198,12 @@ extension ViewController: WKUIDelegate, WKDownloadDelegate {
                     //     downloadAndOpenBase64File(base64String: requestUrl.absoluteString)
                     // }
                 }
+                return
             }
         }
         else {
-            decisionHandler(.cancel)
+            safeDecisionHandler(.cancel)
+            return
         }
 
     }

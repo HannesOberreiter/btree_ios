@@ -56,6 +56,7 @@ class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteract
         
         btree.webView.uiDelegate = self;
         
+        // Note: Observer is already added in createWebView function, no need to add again
         btree.webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
 
         if pullToRefresh {
@@ -167,6 +168,7 @@ class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteract
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
 
         if (keyPath == #keyPath(WKWebView.estimatedProgress) &&
+                btree.webView != nil &&
                 btree.webView.isLoading &&
                 !self.loadingView.isHidden &&
                 !self.htmlIsLoaded) {
@@ -203,7 +205,11 @@ class ViewController: UIViewController, WKNavigationDelegate, UIDocumentInteract
     }
         
     deinit {
-        btree.webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
+        if btree.webView != nil {
+            btree.webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
+        }
+        themeObservation?.invalidate()
+        NotificationCenter.default.removeObserver(self)
     }
 }
 
